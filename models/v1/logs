@@ -1,0 +1,77 @@
+Loading data from /home/benutzer1/Thesis/CLASSIFIER/features.csv...
+Loaded 12354 sessions
+Columns: 75
+
+Label distribution:
+label
+0    6177
+1    6177
+Name: count, dtype: int64
+  Human (1): 6177 sessions
+  Bot (0): 6177 sessions
+
+Splitting data: 20% test, 80% train
+Training set: 9883 sessions
+Test set: 2471 sessions
+
+Training Gradient Boosting Classifier...
+      Iter       Train Loss   Remaining Time 
+         1           1.3029           55.91s
+         2           1.2344           49.32s
+         3           1.1768           46.82s
+         4           1.1289           44.89s
+         5           1.0869           44.07s
+         6           1.0497           43.45s
+         7           1.0173           42.63s
+         8           0.9901           41.85s
+         9           0.9648           41.07s
+        10           0.9412           40.42s
+        20           0.8070           34.72s
+        30           0.7525           30.28s
+        40           0.7255           25.94s
+        50           0.7096           21.82s
+        60           0.6980           17.53s
+        70           0.6907           13.24s
+        80           0.6831            8.78s
+        90           0.6775            4.37s
+       100           0.6713            0.00s
+
+============================================================
+Training Accuracy: 80.56%
+Test Accuracy: 65.12%
+============================================================
+
+Classification Report (Test Set):
+              precision    recall  f1-score   support
+
+         Bot       0.66      0.62      0.64      1236
+       Human       0.64      0.68      0.66      1235
+
+    accuracy                           0.65      2471
+   macro avg       0.65      0.65      0.65      2471
+weighted avg       0.65      0.65      0.65      2471
+
+
+Confusion Matrix (Test Set):
+                Predicted
+              Bot  Human
+Actual Bot     764   472
+       Human    390   845
+
+Top 10 Most Important Features:
+  mouse_speed_p25                          0.3595
+  click_hesitation_median                  0.1274
+  session_click_count                      0.0630
+  time_inter_event_p10                     0.0588
+  click_hesitation_mean                    0.0517
+  click_x_entropy                          0.0390
+  click_y_entropy                          0.0387
+  mouse_speed_p75                          0.0340
+  mouse_curvature_mean                     0.0295
+  mouse_curvature_std                      0.0225
+
+Saving model to /home/benutzer1/Thesis/CLASSIFIER/bot_detection_model.pkl...
+Model saved successfully!
+
+============================================================
+FINAL TEST ACCURACY: 65.12%
