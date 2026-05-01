@@ -3,13 +3,18 @@
 Train a Gradient Boosted Trees model for bot detection.
 """
 
-import pandas as pd
-import numpy as np
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import argparse
+from pathlib import Path
+
 import joblib
-import os
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
+
+from botbuster.constants import LABEL_BOT, LABEL_HUMAN, METADATA_COLUMNS
+from botbuster.paths import default_features_csv, default_model_path
 
 
 def load_and_prepare_data(csv_path):
@@ -24,9 +29,7 @@ def load_and_prepare_data(csv_path):
     if 'label' not in df.columns:
         raise ValueError("No 'label' column found in CSV. Please run extract_features.py first.")
     
-    # Separate features and labels
-    # Exclude metadata columns
-    exclude_cols = ['user_id', 'session_id', 'source_file', 'label']
+    exclude_cols = list(METADATA_COLUMNS)
     feature_cols = [col for col in df.columns if col not in exclude_cols]
     
     X = df[feature_cols].fillna(0).replace([np.inf, -np.inf], 0)
@@ -35,8 +38,8 @@ def load_and_prepare_data(csv_path):
     # Check label distribution
     print(f"\nLabel distribution:")
     print(y.value_counts().sort_index())
-    print(f"  Human (1): {(y == 1).sum()} sessions")
-    print(f"  Bot (0): {(y == 0).sum()} sessions")
+    print(f"  Human ({LABEL_HUMAN}): {(y == LABEL_HUMAN).sum()} sessions")
+    print(f"  Bot ({LABEL_BOT}): {(y == LABEL_BOT).sum()} sessions")
     
     # Check if we have both classes
     if len(y.unique()) < 2:
@@ -110,29 +113,41 @@ def train_gradient_boosting(X, y, test_size=0.2, random_state=42):
 
 def main():
     """Main training function."""
-    csv_path = '/home/benutzer1/Thesis/CLASSIFIER/features.csv'
-    model_path = '/home/benutzer1/Thesis/CLASSIFIER/bot_detection_model.pkl'
-    
-    # Check if features CSV exists
-    if not os.path.exists(csv_path):
+    parser = argparse.ArgumentParser(description='Train gradient boosting bot/human classifier.')
+    parser.add_argument(
+        '--csv',
+        type=Path,
+        default=None,
+        help='Features CSV from extract_features.py (default: features.csv under repo root)',
+    )
+    parser.add_argument(
+        '-o', '--model-out',
+        type=Path,
+        default=None,
+        help='Output path for joblib model (default: models/v0/bot_detection_model.pkl)',
+    )
+    args = parser.parse_args()
+
+    csv_path = args.csv or default_features_csv()
+    model_path = args.model_out or default_model_path()
+
+    if not csv_path.exists():
         print(f"Features CSV not found at {csv_path}")
         print("Please run extract_features.py first to generate features.")
         return
-    
-    # Load and prepare data
-    result = load_and_prepare_data(csv_path)
+
+    result = load_and_prepare_data(str(csv_path))
     if result is None:
         return
-    
+
     X, y, feature_cols, df = result
-    
-    # Train model
+
     model, X_test, y_test, y_pred = train_gradient_boosting(X, y)
-    
+
     if model is None:
         return
-    
-    # Save the model
+
+    model_path.parent.mkdir(parents=True, exist_ok=True)
     print(f"\nSaving model to {model_path}...")
     joblib.dump(model, model_path)
     print("Model saved successfully!")

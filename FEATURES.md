@@ -1,5 +1,7 @@
 # Bot Detection Features Documentation
 
+See also: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how features flow through training and inference, and [README.md](README.md) for running the pipeline.
+
 This document provides a comprehensive explanation of all features extracted from user interaction data for bot detection. The features are organized into six main categories: Time-Based, Mouse Movement, Click, Scroll, Keystroke, and Session-Level features.
 
 ---

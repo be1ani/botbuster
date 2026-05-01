@@ -4,6 +4,7 @@ Feature extraction script for bot detection.
 Extracts engineering features from interaction JSON files.
 """
 
+import argparse
 import json
 import os
 import csv
@@ -13,6 +14,9 @@ from scipy.fft import fft, fftfreq
 from collections import defaultdict
 from pathlib import Path
 import math
+
+from botbuster.constants import LABEL_BOT, LABEL_HUMAN
+from botbuster.paths import bot_data_dir, default_features_csv, human_data_dir
 
 
 def compute_statistics(values):
@@ -653,38 +657,59 @@ def process_json_file(file_path, label=None):
 
 def main():
     """Main function to process all JSON files and create CSV."""
-    # Use real human data from ../DATA and synthetic bot data from ../Synthesizer/output
-    base_dir = Path(__file__).parent.parent  # Go up from CLASSIFIER to Thesis
-    human_data_dir = base_dir / 'DATA'
-    bot_data_dir = base_dir / 'Synthesizer' / 'output' / 'v1'
-    output_file = Path(__file__).parent / 'features.csv'
-    
+    parser = argparse.ArgumentParser(
+        description='Extract interaction features into a labeled CSV for training.'
+    )
+    parser.add_argument(
+        '--human-dir',
+        type=Path,
+        default=None,
+        help='Directory with human interaction JSON files (default: data/human under repo root)',
+    )
+    parser.add_argument(
+        '--bot-dir',
+        type=Path,
+        default=None,
+        help='Directory with bot/synthetic JSON files (default: data/synthetic under repo root)',
+    )
+    parser.add_argument(
+        '-o', '--output',
+        type=Path,
+        default=None,
+        help='Output CSV path (default: features.csv under repo root)',
+    )
+    args = parser.parse_args()
+
+    human_dir = args.human_dir or human_data_dir()
+    bot_dir = args.bot_dir or bot_data_dir()
+    output_file = args.output or default_features_csv()
+
     json_files = []
     labels = []
-    
-    # Load human data (label = 1)
-    if human_data_dir.exists():
-        print(f"Loading human data from {human_data_dir}...")
+
+    # Load human data
+    if human_dir.exists():
+        print(f"Loading human data from {human_dir}...")
         human_count = 0
-        for json_file in human_data_dir.glob('*.json'):
+        for json_file in sorted(human_dir.glob('*.json')):
             json_files.append(json_file)
-            labels.append(1)
+            labels.append(LABEL_HUMAN)
             human_count += 1
         print(f"Found {human_count} human data files")
     else:
-        print(f"Warning: Human data directory not found: {human_data_dir}")
-    
-    # Load bot data (label = 0)
-    if bot_data_dir.exists():
-        print(f"Loading bot data from {bot_data_dir}...")
+        print(f"Warning: Human data directory not found: {human_dir}")
+
+    # Load bot / synthetic data
+    if bot_dir.exists():
+        print(f"Loading bot data from {bot_dir}...")
         bot_count = 0
-        for json_file in bot_data_dir.glob('*.json'):
+        for json_file in sorted(bot_dir.glob('*.json')):
             json_files.append(json_file)
-            labels.append(0)
+            labels.append(LABEL_BOT)
             bot_count += 1
         print(f"Found {bot_count} bot data files")
     else:
-        print(f"Warning: Bot data directory not found: {bot_data_dir}")
+        print(f"Warning: Bot data directory not found: {bot_dir}")
     
     if len(json_files) == 0:
         print("No JSON files found in data directory!")
@@ -718,6 +743,8 @@ def main():
     feature_fields = sorted([f for f in all_feature_names if f not in metadata_fields])
     fieldnames = metadata_fields + feature_fields
     
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
     # Write to CSV
     print(f"Writing {len(all_features)} sessions to {output_file}...")
     with open(output_file, 'w', newline='') as f:
@@ -741,7 +768,9 @@ def main():
                 label_counts[label] += 1
         print(f"\nLabel distribution:")
         for label, count in sorted(label_counts.items()):
-            label_name = "Human" if label == 1 else "Bot" if label == 0 else "Unknown"
+            label_name = (
+                "Human" if label == LABEL_HUMAN else "Bot" if label == LABEL_BOT else "Unknown"
+            )
             print(f"  {label_name} (label={label}): {count} sessions")
 
 

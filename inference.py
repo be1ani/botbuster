@@ -4,7 +4,6 @@ Inference script for bot detection.
 Takes an interactions JSON file and predicts whether it's human or bot.
 """
 
-import json
 import os
 import sys
 import argparse
@@ -18,10 +17,8 @@ script_dir = Path(__file__).parent
 sys.path.insert(0, str(script_dir))
 
 # Import feature extraction functions from extract_features
-from extract_features import (
-    extract_features_from_session,
-    process_json_file
-)
+from botbuster.constants import LABEL_HUMAN, METADATA_COLUMNS
+from extract_features import process_json_file
 
 
 def load_model(model_path):
@@ -42,7 +39,7 @@ def get_feature_columns_from_csv(csv_path):
         raise FileNotFoundError(f"Features CSV not found: {csv_path}")
     
     df = pd.read_csv(csv_path, nrows=1)  # Just read header
-    exclude_cols = ['user_id', 'session_id', 'source_file', 'label']
+    exclude_cols = list(METADATA_COLUMNS)
     feature_cols = [col for col in df.columns if col not in exclude_cols]
     return feature_cols  # Preserve original order, don't sort
 
@@ -93,7 +90,7 @@ def predict_single_file(model, json_file_path, feature_columns):
         result = {
             'user_id': user_id,
             'session_id': session_id,
-            'prediction': 'Human' if prediction == 1 else 'Bot',
+            'prediction': 'Human' if prediction == LABEL_HUMAN else 'Bot',
             'prediction_label': int(prediction),
             'confidence': confidence,
             'human_probability': probabilities[1] * 100,
