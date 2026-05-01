@@ -1,0 +1,13 @@
+flowchart LR
+  subgraph inputs
+    H[data/human/*.json]
+    B[data/synthetic/*.json]
+  end
+  H --> EF[extract_features.py]
+  B --> EF
+  EF --> CSV[features.csv]
+  CSV --> TM[train_model.py]
+  TM --> M[models/v0/bot_detection_model.pkl]
+  M --> INF[inference.py]
+  J[Any interactions JSON] --> INF
+  INF --> OUT[Predictions]

@@ -1,0 +1,17 @@
+flowchart TB
+  subgraph scripts
+    EF[extract_features.py]
+    TM[train_model.py]
+    INF[inference.py]
+  end
+  subgraph pkg[botbuster]
+    P[paths]
+    C[constants]
+  end
+  EF --> P
+  EF --> C
+  TM --> P
+  TM --> C
+  INF --> P
+  INF --> C
+  INF --> EF
